@@ -316,6 +316,9 @@
     </div>
 
     <!-- Update your form to handle the submission with JavaScript -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="./js/firebase-ops.js"></script>
     <script>
         // Move closeCustomerModal outside the DOMContentLoaded listener
         function closeCustomerModal() {
@@ -323,29 +326,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('billingForm').addEventListener('submit', async function(e) {
+            document.getElementById('billingForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const formData = {
-                        customer_id: document.getElementById('customer_id').value,
-                        customer_name: document.getElementById('customer_name').value,
-                        phone: document.getElementById('phone').value,
-                        tree_id: document.getElementById('tree_id').value,
-                        tree_measurement: document.getElementById('tree_measurement').value,
-                        tree_quantity: document.getElementById('tree_quantity').value,
-                        total_amount: document.getElementById('total_amount').value,
-                        amount_paid: document.getElementById('amount_paid').value,
-                    };
-
-                    const docRef = await firebase.firestore().collection('bills').add({
-                        ...formData,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        balance: formData.total_amount - formData.amount_paid
-                    });
+                    const formData = new FormData(e.target);
+                    const billData = Object.fromEntries(formData);
                     
-                    window.location.href = '/';
+                    const result = await saveBill(billData);
+                    if (result.status === 'success') {
+                        alert('Bill saved successfully!');
+                        window.location.href = './bills.html';
+                    }
                 } catch (error) {
-                    console.error('Error saving bill:', error);
+                    alert('Error saving bill: ' + error.message);
                 }
             });
 
