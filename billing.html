@@ -252,7 +252,7 @@
 </head>
 <body>
     <header class="header">
-        <button class="back-button" onclick="window.location.href='/'">
+        <button class="back-button" onclick="window.location.href='./'">
             <span class="material-icons">arrow_back</span>
         </button>
         <h1 class="header-title">Billing Form</h1>
@@ -288,7 +288,7 @@
             </div>
             <div class="button-container">
                 <button type="submit" class="button submit-button">Submit</button>
-                <button type="button" class="button view-bills-button" onclick="window.location.href='/bills'">View Bills</button>
+                <button type="button" class="button view-bills-button" onclick="window.location.href='./bills.html'">View Bills</button>
             </div>
         </form>
     </div>
@@ -330,7 +330,19 @@
             document.getElementById('billingForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                const billData = Object.fromEntries(formData);
+                const billData = {
+                    customer_id: formData.get('customer_id'),
+                    customer_name: formData.get('customer_name'),
+                    phone: formData.get('phone'),
+                    tree_id: formData.get('tree_id'),
+                    tree_measurement: formData.get('tree_measurement'),
+                    tree_quantity: parseInt(formData.get('tree_quantity')) || 1,
+                    total_amount: parseFloat(formData.get('total_amount')),
+                    amount_paid: parseFloat(formData.get('amount_paid')),
+                    balance: parseFloat(formData.get('total_amount')) - parseFloat(formData.get('amount_paid')),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'active'
+                };
                 
                 try {
                     const result = await saveBill(billData);
@@ -393,31 +405,33 @@
                 console.log(`Fetching customer details - searchBy: ${searchBy}, value: ${value}`);
                 try {
                     const trimmedValue = value.trim();
-                    const url = `/get_customer?searchBy=${searchBy}&value=${encodeURIComponent(trimmedValue)}`;
-                    console.log(`Fetching URL: ${url}`);
+                    let query = db.collection('bills');
                     
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    console.log('Response data:', data);
+                    if (searchBy === 'id') {
+                        query = query.where('customer_id', '==', trimmedValue);
+                    } else {
+                        query = query.where('customer_name', '==', trimmedValue);
+                    }
+
+                    const snapshot = await query.limit(1).get();
                     
-                    if (data.status === 'success' && data.customer) {
-                        console.log('Found customer:', data.customer);
+                    if (!snapshot.empty) {
+                        const customerData = snapshot.docs[0].data();
+                        console.log('Found customer:', customerData);
+                        
                         if (searchBy === 'id') {
-                            // Only update name and phone if they're empty
-                            customerNameInput.value = data.customer.name;
-                            phoneInput.value = data.customer.phone || '';
+                            customerNameInput.value = customerData.customer_name;
+                            phoneInput.value = customerData.phone || '';
                         } else if (searchBy === 'name') {
                             if (!customerIdInput.value) {
-                                console.log('Setting customer ID:', data.customer.id);
-                                customerIdInput.value = data.customer.id;
+                                customerIdInput.value = customerData.customer_id;
                             }
                             if (!phoneInput.value) {
-                                console.log('Setting phone:', data.customer.phone);
-                                phoneInput.value = data.customer.phone || '';
+                                phoneInput.value = customerData.phone || '';
                             }
                         }
                     } else {
-                        console.log('No customer found or invalid response');
+                        console.log('No customer found');
                     }
                 } catch (error) {
                     console.error('Error fetching customer details:', error);
@@ -425,6 +439,6 @@
             }
         });
     </script>
-    <script src="/js/darkMode.js"></script>
+    <script src="./js/darkMode.js"></script>
 </body>
 </html>
