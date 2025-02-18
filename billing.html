@@ -318,6 +318,7 @@
     <!-- Update your form to handle the submission with JavaScript -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="./js/firebase-config.js"></script>
     <script src="./js/firebase-ops.js"></script>
     <script>
         // Move closeCustomerModal outside the DOMContentLoaded listener
@@ -328,10 +329,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('billingForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const formData = new FormData(e.target);
+                const billData = Object.fromEntries(formData);
+                
                 try {
-                    const formData = new FormData(e.target);
-                    const billData = Object.fromEntries(formData);
-                    
                     const result = await saveBill(billData);
                     if (result.status === 'success') {
                         alert('Bill saved successfully!');
